@@ -1,3 +1,4 @@
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (QApplication, QLabel, QWidget, QMainWindow,
                              QComboBox, QLineEdit, QPushButton, QTableWidget,
                              QTableWidgetItem, QDialog, QVBoxLayout)
@@ -25,7 +26,7 @@ class MainWindow(QMainWindow):
 
         search_action = QAction("Search", self)
         edit_menu_item.addAction(search_action)
-        search_action.setMenuRole(QAction.MenuRole.NoRole)
+        search_action.triggered.connect(self.search)
 
         self.table = QTableWidget()
         self.table.setColumnCount(4)
@@ -46,6 +47,10 @@ class MainWindow(QMainWindow):
 
     def insert(self):
         dialog = InsertDialog()
+        dialog.exec()
+
+    def search(self):
+        dialog = SearchDialog()
         dialog.exec()
 
 
@@ -93,6 +98,45 @@ class InsertDialog(QDialog):
         cursor.close()
         connection.close()
         student_management_system.load_data()
+
+
+class SearchDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Search Student")
+        self.setFixedWidth(300)
+        self.setFixedHeight(300)
+
+        # Create layout and input widget
+        layout = QVBoxLayout()
+
+        # Add student name widget
+        self.student_search_name = QLineEdit()
+        self.student_search_name.setPlaceholderText("Name")
+        layout.addWidget(self.student_search_name)
+
+        # Add button
+        button = QPushButton("Search")
+        button.clicked.connect(self.search)
+        layout.addWidget(button)
+
+        self.setLayout(layout)
+
+    def search(self):
+        name = self.student_search_name.text()
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        result = cursor.execute("SELECT * FROM students WHERE name = ?",
+                                (name,))
+        rows = list(result)
+        print(rows)
+        items = student_management_system.table.findItems(name, Qt.MatchFlag.MatchFixedString)
+        for item in items:
+            print(item)
+            student_management_system.table.item(item.row(), 1).setSelected(True)
+
+        cursor.close()
+        connection.close()
 
 
 app = QApplication(sys.argv)
